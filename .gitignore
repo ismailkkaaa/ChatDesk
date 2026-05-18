@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+
+database.db
+.flask_secret_key
+
+browser_session/
+
+uploads/*
+exports/*
+
+.env
+
+*.log
