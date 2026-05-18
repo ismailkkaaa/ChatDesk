@@ -1,0 +1,60 @@
+{% from "_icons.html" import icon %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - ChatDesk</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/chatdesk-logo.svg') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <style>
+    body { display: flex; min-height: 100vh; align-items: center; justify-content: center; background: var(--bg); }
+    .login-container { width: 100%; max-width: 400px; padding: 20px; }
+    .login-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-md); border: 1px solid var(--border); padding: 40px 36px; }
+    .login-brand { text-align: center; margin-bottom: 32px; }
+    .login-icon { width: 56px; height: 56px; margin: 0 auto 16px; }
+    .login-title { font-size: 1.5rem; font-weight: 700; color: var(--text); letter-spacing: -.4px; }
+    .login-subtitle { font-size: 0.85rem; color: var(--text-muted); margin-top: 5px; }
+    .login-card .btn-primary { width: 100%; justify-content: center; padding: 12px; font-size: 0.95rem; margin-top: 8px; }
+    .error-box { background: var(--danger-bg); color: var(--danger-dark); border-radius: var(--radius-sm); padding: 11px 14px; font-size: 0.875rem; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+    .login-footer { text-align: center; margin-top: 24px; font-size: 0.78rem; color: var(--text-light); }
+    .network-info { background: var(--primary-light); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 0.8rem; color: var(--primary); text-align: center; margin-top: 20px; display:flex; align-items:center; justify-content:center; gap:8px; }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-brand">
+        <img src="{{ url_for('static', filename='img/chatdesk-logo.svg') }}" alt="ChatDesk logo" class="login-icon">
+        <div class="login-title">ChatDesk</div>
+        <div class="login-subtitle">WhatsApp Campaign Manager</div>
+      </div>
+
+      {% if error %}
+        <div class="error-box">{{ icon('x', 'inline-icon') }} {{ error }}</div>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('login') }}">
+        <div class="form-group">
+          <label class="form-label" for="username">Username</label>
+          <input class="form-control" type="text" id="username" name="username" placeholder="Enter your username" required autofocus autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input class="form-control" type="password" id="password" name="password" placeholder="Enter your password" required autocomplete="current-password">
+        </div>
+        <button class="btn btn-primary" type="submit">Sign In</button>
+      </form>
+    </div>
+
+    <div class="network-info">{{ icon('browser', 'inline-icon') }} Access from any device on your WiFi network</div>
+    <div class="login-footer">
+      <div>ChatDesk runs locally on your network. No internet required.</div>
+      <div style="margin-top: 10px;">Warning: ChatDesk automates WhatsApp Web actions. Frequent campaigns may cause temporary WhatsApp restrictions. Users are responsible for using ChatDesk at their own risk.</div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

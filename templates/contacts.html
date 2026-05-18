@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Contacts{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Contacts</div>
+    <div class="page-subtitle">{{ total }} contacts in your database</div>
+  </div>
+  <div class="flex gap-2">
+    <a href="{{ url_for('sample_csv') }}" class="btn btn-outline btn-sm">{{ icon('download', 'inline-icon') }} Sample CSV</a>
+    <a href="{{ url_for('export_contacts') }}" class="btn btn-outline btn-sm">{{ icon('download', 'inline-icon') }} Export</a>
+    {% if session.role == 'owner' %}
+    <button class="btn btn-outline btn-sm" onclick="openModal('upload-modal')">{{ icon('upload', 'inline-icon') }} Upload CSV</button>
+    <button class="btn btn-primary btn-sm" onclick="openModal('add-modal')">+ Add Contact</button>
+    {% endif %}
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="card mb-6" style="margin-bottom: 20px;">
+    <div class="card-body" style="padding: 14px 20px;">
+      <form method="GET" action="{{ url_for('contacts') }}">
+        <div class="search-bar" style="display:flex; gap: 10px; align-items: center;">
+          <div style="position: relative; flex: 1;">
+            <span class="search-icon">{{ icon('search', 'inline-icon') }}</span>
+            <input type="text" name="q" value="{{ search }}" class="form-control" style="padding-left: 38px;" placeholder="Search by name or phone...">
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">Search</button>
+          {% if search %}
+            <a href="{{ url_for('contacts') }}" class="btn btn-outline btn-sm">Clear</a>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    {% if contacts %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Notes</th>
+            <th>Added</th>
+            {% if session.role == 'owner' %}<th style="width:80px;"></th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in contacts %}
+          <tr>
+            <td class="text-muted text-sm">{{ loop.index }}</td>
+            <td style="font-weight:600;">{{ c.name }}</td>
+            <td style="font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">{{ c.phone }}</td>
+            <td class="text-muted text-sm">{{ c.notes or '-' }}</td>
+            <td class="text-muted text-sm">{{ c.created_at[:10] if c.created_at else '-' }}</td>
+            {% if session.role == 'owner' %}
+            <td>
+              <form method="POST" action="{{ url_for('delete_contact', cid=c.id) }}" onsubmit="return confirm('Delete {{ c.name }}?')">
+                <button type="submit" class="btn btn-danger btn-sm btn-icon" title="Delete">{{ icon('trash', 'inline-icon') }}</button>
+              </form>
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">{{ icon('contacts') }}</div>
+      <p>No contacts found.</p>
+      {% if session.role == 'owner' %}
+        <p style="margin-top:6px;">Upload a CSV or add contacts manually.</p>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if session.role == 'owner' %}
+<div class="modal-overlay" id="add-modal">
+  <div class="modal">
+    <div class="modal-title">Add Contact</div>
+    <div class="modal-body">Enter the contact details below.</div>
+    <form method="POST" action="{{ url_for('add_contact') }}">
+      <div class="form-group">
+        <label class="form-label">Name *</label>
+        <input type="text" name="name" class="form-control" placeholder="Full name" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone *</label>
+        <input type="text" name="phone" class="form-control" placeholder="919876543210 (with country code)" required>
+        <div class="form-hint">Include country code without +. Example: 919876543210</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notes (optional)</label>
+        <input type="text" name="notes" class="form-control" placeholder="Any notes...">
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('add-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Add Contact</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="upload-modal">
+  <div class="modal">
+    <div class="modal-title">Upload CSV File</div>
+    <div class="modal-body">CSV must have columns: <strong>name</strong>, <strong>phone</strong>, and optional <strong>notes</strong>. Duplicates and invalid numbers are skipped automatically.</div>
+    <form method="POST" action="{{ url_for('upload_contacts') }}" enctype="multipart/form-data">
+      <div class="form-group">
+        <label class="form-label">Select CSV File</label>
+        <input type="file" id="csv-input" name="csv_file" class="form-control" accept=".csv" required>
+        <div class="form-hint" id="csv-preview" style="display:none; color: var(--primary);"></div>
+      </div>
+      <div style="background: var(--bg); border-radius: 10px; padding: 12px; margin-bottom: 18px; font-size: 0.82rem; color: var(--text-muted); display:flex; align-items:center; gap:8px;">
+        {{ icon('info', 'inline-icon') }} Need a template? <a href="{{ url_for('sample_csv') }}">Download sample CSV</a>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('upload-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Upload and Import</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

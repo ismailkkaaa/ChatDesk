@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Campaigns{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Campaigns</div>
+    <div class="page-subtitle">Create and manage your WhatsApp campaigns</div>
+  </div>
+  {% if session.role == 'owner' %}
+  <button class="btn btn-primary btn-sm" onclick="openModal('create-modal')">+ New Campaign</button>
+  {% endif %}
+</div>
+
+<div class="page-body">
+  <div style="background: var(--primary-light); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 20px; font-size: 0.85rem; color: var(--primary); display: flex; gap: 8px; align-items: center;">
+    {{ icon('shield', 'inline-icon') }} Max <strong>{{ max_contacts }}</strong> contacts per campaign · Contacts available: <strong>{{ total_contacts }}</strong>
+  </div>
+
+  {% if campaign_state.running or campaign_state.paused %}
+  <div class="card mb-6" style="margin-bottom: 20px; border-left: 4px solid {% if campaign_state.paused %}var(--warning){% else %}var(--primary){% endif %};">
+    <div class="card-body">
+      <div class="flex justify-between items-center">
+        <div>
+          <div style="font-weight: 700; font-size: 0.95rem;">{% if campaign_state.paused %}{{ icon('pause', 'inline-icon') }} Campaign Paused{% else %}{{ icon('play', 'inline-icon') }} Campaign Running{% endif %}</div>
+          <div class="text-sm text-muted" style="margin-top: 3px;">{{ campaign_state.sent }} sent · {{ campaign_state.failed }} failed · {{ campaign_state.total }} total</div>
+        </div>
+        <div class="flex gap-2">
+          <button id="btn-pause" onclick="campaignPause()" class="btn btn-warning btn-sm" style="{{ 'display:none' if campaign_state.paused else '' }}">{{ icon('pause', 'inline-icon') }} Pause</button>
+          <button id="btn-resume" onclick="campaignResume()" class="btn btn-success btn-sm" style="{{ '' if campaign_state.paused else 'display:none' }}">{{ icon('play', 'inline-icon') }} Resume</button>
+          {% if session.role == 'owner' %}
+          <button onclick="campaignStop()" class="btn btn-danger btn-sm">{{ icon('stop', 'inline-icon') }} Stop</button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">All Campaigns</span>
+    </div>
+    {% if campaigns %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Contacts</th>
+            <th>Sent</th>
+            <th>Failed</th>
+            <th>Created</th>
+            {% if session.role == 'owner' %}<th>Actions</th>{% endif %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in campaigns %}
+          <tr>
+            <td style="font-weight: 600;">
+              {{ c.name }}
+              {% if c.template_name %}
+                <br><span class="text-sm text-muted">Template: {{ c.template_name }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if c.status == 'running' %}
+                <span class="badge badge-blue">{{ icon('play', 'inline-icon') }} Running</span>
+              {% elif c.status == 'paused' %}
+                <span class="badge badge-orange">{{ icon('pause', 'inline-icon') }} Paused</span>
+              {% elif c.status == 'finished' %}
+                <span class="badge badge-green">{{ icon('check', 'inline-icon') }} Finished</span>
+              {% elif c.status == 'stopped' %}
+                <span class="badge badge-red">{{ icon('stop', 'inline-icon') }} Stopped</span>
+              {% else %}
+                <span class="badge badge-gray">Draft</span>
+              {% endif %}
+            </td>
+            <td>{{ c.total or '-' }}</td>
+            <td style="color: var(--success-dark); font-weight: 500;">{{ c.sent }}</td>
+            <td style="color: var(--danger-dark);">{{ c.failed }}</td>
+            <td class="text-muted text-sm">{{ c.created_at[:10] }}</td>
+            {% if session.role == 'owner' %}
+            <td>
+              <div class="flex gap-2">
+                {% if c.status == 'draft' and not (campaign_state.running or campaign_state.paused) %}
+                <form method="POST" action="{{ url_for('start_campaign', cid=c.id) }}">
+                  <button type="submit" class="btn btn-success btn-sm">{{ icon('play', 'inline-icon') }} Start</button>
+                </form>
+                {% endif %}
+                <form method="POST" action="{{ url_for('delete_campaign', cid=c.id) }}" onsubmit="return confirm('Delete campaign {{ c.name }}?')">
+                  <button type="submit" class="btn btn-danger btn-sm btn-icon" title="Delete">{{ icon('trash', 'inline-icon') }}</button>
+                </form>
+              </div>
+            </td>
+            {% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">{{ icon('campaigns') }}</div>
+      <p>No campaigns yet.</p>
+      {% if session.role == 'owner' %}
+        <button class="btn btn-primary btn-sm" onclick="openModal('create-modal')" style="margin-top: 14px;">Create First Campaign</button>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  {% if templates %}
+  <div class="card" style="margin-top: 20px;">
+    <div class="card-header">
+      <span class="card-title">Saved Templates</span>
+      <span class="badge badge-gray">{{ templates|length }}</span>
+    </div>
+    <div class="card-body">
+      <div style="display: grid; gap: 10px;">
+        {% for t in templates %}
+        <div style="background: var(--bg); border-radius: 10px; padding: 14px 16px; border: 1px solid var(--border);">
+          <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 4px;">{{ t.name }}</div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); font-family: var(--font-mono); white-space: pre-wrap;">{{ t.message[:180] }}{% if t.message|length > 180 %}...{% endif %}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% if session.role == 'owner' %}
+<div class="modal-overlay" id="create-modal">
+  <div class="modal" style="width: 520px;">
+    <div class="modal-title">New Campaign</div>
+    <div class="modal-body">Compose your WhatsApp message. Use <code style="background:var(--bg);padding:1px 6px;border-radius:4px;">{name}</code> to personalize each message.</div>
+
+    <form method="POST" action="{{ url_for('create_campaign') }}">
+      <div class="form-group">
+        <label class="form-label">Campaign Name *</label>
+        <input type="text" name="name" class="form-control" placeholder="e.g. June Class Reminder" required>
+      </div>
+
+      {% if templates %}
+      <div class="form-group">
+        <label class="form-label">Load from Template</label>
+        <select class="form-control" onchange="loadTemplate(this)">
+          <option value="">- Select template -</option>
+          {% for t in templates %}
+          <option value="{{ t.id }}" data-message="{{ t.message }}">{{ t.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      <div class="form-group">
+        <label class="form-label">Message *</label>
+        <textarea id="campaign-message" name="message" class="form-control" placeholder="Hi {name}, your class starts tomorrow at 10am. Please be on time!" rows="6" required></textarea>
+        <div class="form-hint flex justify-between">
+          <span>Use <strong>{name}</strong> for personalization</span>
+          <span id="char-counter">0 characters</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Save as Template (optional)</label>
+        <input type="text" name="template_name" class="form-control" placeholder="Template name, e.g. Class Reminder">
+      </div>
+
+      <div style="background: var(--warning-bg); border-radius: 10px; padding: 12px 14px; font-size: 0.82rem; color: var(--warning); margin-bottom: 18px; display:flex; align-items:center; gap:8px;">
+        {{ icon('alert', 'inline-icon') }} Campaign will send to up to {{ max_contacts }} contacts in randomized order. Make sure WhatsApp Web is ready before starting.
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeModal('create-modal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Campaign</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}How It Works{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">How It Works</div>
+    <div class="page-subtitle">The full ChatDesk workflow in one quick view</div>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="card workflow-hero-card">
+    <div class="card-body workflow-hero-body">
+      <div class="workflow-hero-copy">
+        <div class="workflow-kicker">Simple workflow</div>
+        <h2>Upload. Write. Start. Track.</h2>
+        <p>ChatDesk takes contacts to history in six guided steps.</p>
+      </div>
+      <img src="{{ url_for('static', filename='img/workflow-illustration.png') }}" alt="ChatDesk workflow illustration" class="workflow-hero-illustration">
+    </div>
+  </div>
+
+  <div class="workflow-steps">
+    <div class="workflow-step-card">
+      <div class="workflow-step-icon">{{ icon('upload') }}</div>
+      <h3>Upload Contacts</h3>
+      <p>CSV import or manual entry.</p>
+    </div>
+    <div class="workflow-arrow">→</div>
+    <div class="workflow-step-card">
+      <div class="workflow-step-icon">{{ icon('edit') }}</div>
+      <h3>Create Message</h3>
+      <p>Custom template with personalization.</p>
+    </div>
+    <div class="workflow-arrow">→</div>
+    <div class="workflow-step-card">
+      <div class="workflow-step-icon">{{ icon('play') }}</div>
+      <h3>Start Campaign</h3>
+      <p>Launch a controlled send run.</p>
+    </div>
+    <div class="workflow-arrow">→</div>
+    <div class="workflow-step-card">
+      <div class="workflow-step-icon">{{ icon('browser') }}</div>
+      <h3>WhatsApp Web Opens</h3>
+      <p>Your saved session loads in the browser.</p>
+    </div>
+    <div class="workflow-arrow">→</div>
+    <div class="workflow-step-card">
+      <div class="workflow-step-icon">{{ icon('refresh') }}</div>
+      <h3>Auto Send</h3>
+      <p>Random delay and safety pauses are applied.</p>
+    </div>
+    <div class="workflow-arrow">→</div>
+    <div class="workflow-step-card">
+      <div class="workflow-step-icon">{{ icon('dashboard') }}</div>
+      <h3>Dashboard Updates</h3>
+      <p>Live counts, activity, and status refresh.</p>
+    </div>
+    <div class="workflow-arrow">→</div>
+    <div class="workflow-step-card">
+      <div class="workflow-step-icon">{{ icon('history') }}</div>
+      <h3>History Saved</h3>
+      <p>Campaign results remain available after completion.</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 20px;">
+    <div class="card-header">
+      <span class="card-title">{{ icon('shield', 'inline-icon') }} Safety Protection</span>
+    </div>
+    <div class="card-body">
+      <div class="workflow-safety-grid">
+        <div class="workflow-safety-item">{{ icon('check', 'inline-icon') }} Max 100 contacts</div>
+        <div class="workflow-safety-item">{{ icon('check', 'inline-icon') }} Delay 5-15 sec</div>
+        <div class="workflow-safety-item">{{ icon('check', 'inline-icon') }} Auto breaks</div>
+        <div class="workflow-safety-item">{{ icon('check', 'inline-icon') }} Browser close pauses campaign</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

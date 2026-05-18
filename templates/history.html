@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}History{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">History</div>
+    <div class="page-subtitle">Past campaign results and statistics</div>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="card mb-6" style="margin-bottom: 20px;">
+    <div class="card-header">
+      <span class="card-title">Campaign Summary</span>
+      <span class="badge badge-gray">{{ history|length }} records</span>
+    </div>
+    {% if history %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Campaign</th>
+            <th>Date</th>
+            <th>Contacts</th>
+            <th>Sent</th>
+            <th>Failed</th>
+            <th>Success Rate</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in history %}
+          <tr>
+            <td class="text-muted text-sm">{{ loop.index }}</td>
+            <td style="font-weight: 600;">{{ h.campaign_name }}</td>
+            <td class="text-muted text-sm">{{ h.date }}</td>
+            <td>{{ h.total_contacts }}</td>
+            <td style="color: var(--success-dark); font-weight: 600;">{{ h.sent }}</td>
+            <td style="color: var(--danger-dark);">{{ h.failed }}</td>
+            <td>
+              {% if h.total_contacts > 0 %}
+                {% set pct = ((h.sent / h.total_contacts) * 100)|int %}
+                <div class="flex items-center gap-2">
+                  <div class="progress-wrap" style="width: 80px;">
+                    <div class="progress-bar {% if pct >= 80 %}success{% elif pct < 50 %}warning{% endif %}" style="width: {{ pct }}%;"></div>
+                  </div>
+                  <span class="text-sm">{{ pct }}%</span>
+                </div>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">{{ icon('history') }}</div>
+      <p>No campaign history yet.</p>
+      <p style="margin-top: 4px; font-size: 0.82rem;">Completed campaigns will appear here.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">All Campaigns (Detailed)</span>
+    </div>
+    {% if campaigns %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Total</th>
+            <th>Sent</th>
+            <th>Failed</th>
+            <th>Started</th>
+            <th>Finished</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in campaigns %}
+          <tr>
+            <td style="font-weight: 600;">{{ c.name }}</td>
+            <td>
+              {% if c.status == 'finished' %}
+                <span class="badge badge-green">{{ icon('check', 'inline-icon') }} Finished</span>
+              {% else %}
+                <span class="badge badge-orange">{{ icon('stop', 'inline-icon') }} Stopped</span>
+              {% endif %}
+            </td>
+            <td>{{ c.total }}</td>
+            <td style="color: var(--success-dark); font-weight: 600;">{{ c.sent }}</td>
+            <td style="color: var(--danger-dark);">{{ c.failed }}</td>
+            <td class="text-muted text-sm">{{ c.started_at[:16] if c.started_at else '-' }}</td>
+            <td class="text-muted text-sm">{{ c.finished_at[:16] if c.finished_at else '-' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">{{ icon('dashboard') }}</div>
+      <p>No finished or stopped campaigns found.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

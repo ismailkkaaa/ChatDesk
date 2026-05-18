@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Settings</div>
+    <div class="page-subtitle">Owner controls and system management</div>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">{{ icon('key', 'inline-icon') }} Change Password</span>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('change_password') }}">
+          <div class="form-group"><label class="form-label">Current Password</label><input type="password" name="current_password" class="form-control" required></div>
+          <div class="form-group"><label class="form-label">New Password</label><input type="password" name="new_password" class="form-control" required></div>
+          <div class="form-group"><label class="form-label">Confirm New Password</label><input type="password" name="confirm_password" class="form-control" required></div>
+          <button type="submit" class="btn btn-primary btn-sm">Update Password</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">{{ icon('user-plus', 'inline-icon') }} Add Staff User</span>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('add_user') }}">
+          <div class="form-group"><label class="form-label">Username</label><input type="text" name="username" class="form-control" placeholder="staff1" required></div>
+          <div class="form-group"><label class="form-label">Password</label><input type="password" name="password" class="form-control" required></div>
+          <div class="form-group"><label class="form-label">Role</label><select name="role" class="form-control"><option value="staff">Staff</option></select></div>
+          <button type="submit" class="btn btn-primary btn-sm">Create User</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 20px;">
+    <div class="card-header">
+      <span class="card-title">All Users</span>
+      <span class="badge badge-gray">{{ users|length }}</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Last Login</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr>
+            <td style="font-weight: 600;">
+              <div class="flex items-center gap-2">
+                <div class="user-avatar" style="width:28px;height:28px;font-size:0.7rem;">{{ u.username[0].upper() }}</div>
+                {{ u.username }}
+              </div>
+            </td>
+            <td><span class="badge {% if u.role == 'owner' %}role-owner{% else %}role-staff{% endif %}">{{ u.role }}</span></td>
+            <td class="text-muted text-sm">{{ u.last_login[:16] if u.last_login else 'Never' }}</td>
+            <td>{% if u.online %}<span class="badge badge-green">{{ icon('check', 'inline-icon') }} Online</span>{% else %}<span class="badge badge-gray">Offline</span>{% endif %}</td>
+            <td>
+              <div class="flex gap-2">
+                {% if u.id != session.user_id %}
+                  {% if u.online %}
+                  <form method="POST" action="{{ url_for('force_logout', uid=u.id) }}" onsubmit="return confirm('Force logout {{ u.username }}?')">
+                    <button type="submit" class="btn btn-warning btn-sm">Force Logout</button>
+                  </form>
+                  {% endif %}
+                  {% if u.role != 'owner' %}
+                  <form method="POST" action="{{ url_for('remove_user', uid=u.id) }}" onsubmit="return confirm('Remove user {{ u.username }}? This cannot be undone.')">
+                    <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                  </form>
+                  {% endif %}
+                {% else %}
+                  <span class="text-sm text-muted">(You)</span>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 20px; border-color: var(--danger);">
+    <div class="card-header" style="background: var(--danger-bg);">
+      <span class="card-title" style="color: var(--danger-dark);">{{ icon('alert', 'inline-icon') }} Danger Zone</span>
+    </div>
+    <div class="card-body">
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="flex justify-between items-center" style="padding: 14px; background: var(--bg); border-radius: 10px;">
+          <div>
+            <div style="font-weight: 600; font-size: 0.9rem;">{{ icon('archive', 'inline-icon') }} Backup Data</div>
+            <div class="text-sm text-muted">Download full database as JSON file.</div>
+          </div>
+          <a href="{{ url_for('backup') }}" class="btn btn-outline btn-sm">Download Backup</a>
+        </div>
+
+        <div class="flex justify-between items-center" style="padding: 14px; background: var(--bg); border-radius: 10px;">
+          <div>
+            <div style="font-weight: 600; font-size: 0.9rem;">{{ icon('trash', 'inline-icon') }} Delete All Contacts</div>
+            <div class="text-sm text-muted">Permanently remove all contacts from the database.</div>
+          </div>
+          <form method="POST" action="{{ url_for('delete_all_contacts') }}" onsubmit="return confirm('Delete ALL contacts? This cannot be undone!')">
+            <button type="submit" class="btn btn-danger btn-sm">Delete Contacts</button>
+          </form>
+        </div>
+
+        <div class="flex justify-between items-center" style="padding: 14px; background: var(--bg); border-radius: 10px;">
+          <div>
+            <div style="font-weight: 600; font-size: 0.9rem;">{{ icon('trash', 'inline-icon') }} Delete All Campaigns</div>
+            <div class="text-sm text-muted">Permanently remove all campaigns and logs.</div>
+          </div>
+          <form method="POST" action="{{ url_for('delete_all_campaigns') }}" onsubmit="return confirm('Delete ALL campaigns and history? This cannot be undone!')">
+            <button type="submit" class="btn btn-danger btn-sm">Delete Campaigns</button>
+          </form>
+        </div>
+
+        <div class="flex justify-between items-center" style="padding: 14px; background: var(--danger-bg); border-radius: 10px; border: 1px solid var(--danger);">
+          <div>
+            <div style="font-weight: 700; font-size: 0.9rem; color: var(--danger-dark);">{{ icon('alert', 'inline-icon') }} Factory Reset</div>
+            <div class="text-sm" style="color: var(--danger-dark); opacity: .8;">Clear ALL data. Only owner account is kept.</div>
+          </div>
+          <form method="POST" action="{{ url_for('factory_reset') }}" onsubmit="return confirm('FACTORY RESET: This will delete all contacts, campaigns, history, staff users, and logs. Are you absolutely sure?')">
+            <button type="submit" class="btn btn-danger btn-sm">Factory Reset</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">Dashboard</div>
+    <div class="page-subtitle">Overview of your campaign activity</div>
+  </div>
+  <div class="flex gap-2">
+    {% if session.role == 'owner' %}
+      <a href="{{ url_for('contacts') }}" class="btn btn-outline btn-sm">{{ icon('contacts', 'inline-icon') }} Contacts</a>
+      <a href="{{ url_for('campaigns') }}" class="btn btn-primary btn-sm">{{ icon('campaigns', 'inline-icon') }} Campaigns</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-icon blue">{{ icon('contacts') }}</div>
+      <div>
+        <div class="stat-value">{{ total_contacts }}</div>
+        <div class="stat-label">Total Contacts</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green">{{ icon('check') }}</div>
+      <div>
+        <div class="stat-value" id="stat-sent-today">{{ sent_today }}</div>
+        <div class="stat-label">Messages Sent Today</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon red">{{ icon('x') }}</div>
+      <div>
+        <div class="stat-value">{{ failed_today }}</div>
+        <div class="stat-label">Failed Today</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange">{{ icon('campaigns') }}</div>
+      <div>
+        <div class="stat-value" id="campaign-running-stat">{{ '1' if campaign_state.running else '0' }}</div>
+        <div class="stat-label">Running Campaign</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon purple">{{ icon('check') }}</div>
+      <div>
+        <div class="stat-value" id="stat-online">{{ online_users }}</div>
+        <div class="stat-label">Online Users</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2 mb-6">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Current Campaign</span>
+        <span id="campaign-status" class="badge {% if campaign_state.running and not campaign_state.paused %}badge-green{% elif campaign_state.paused %}badge-orange{% else %}badge-gray{% endif %}">
+          {% if campaign_state.running and not campaign_state.paused %}Running{% elif campaign_state.paused %}Paused{% else %}Idle{% endif %}
+        </span>
+      </div>
+      <div class="card-body">
+        {% if campaign_state.running or campaign_state.paused %}
+          <div class="mb-4">
+            <div class="flex justify-between items-center mb-4" style="margin-bottom: 8px;">
+              <span id="progress-text" class="text-sm text-muted">{{ campaign_state.sent }} / {{ campaign_state.total }} sent</span>
+              <span class="text-sm text-muted">{{ ((campaign_state.sent / campaign_state.total) * 100)|int if campaign_state.total else 0 }}%</span>
+            </div>
+            <div class="progress-wrap" id="campaign-progress">
+              <div class="progress-bar" id="progress-bar" style="width: {{ ((campaign_state.sent / campaign_state.total) * 100)|int if campaign_state.total else 0 }}%"></div>
+            </div>
+          </div>
+
+          {% if campaign_state.current_contact %}
+            <div class="text-sm text-muted mb-4" style="margin-bottom: 14px;">
+              Currently sending to: <strong>{{ campaign_state.current_contact }}</strong>
+            </div>
+          {% endif %}
+
+          <div class="flex gap-2">
+            <button id="btn-pause" onclick="campaignPause()" class="btn btn-warning btn-sm" style="{{ 'display:none' if campaign_state.paused else '' }}">
+              {{ icon('pause', 'inline-icon') }} Pause
+            </button>
+            <button id="btn-resume" onclick="campaignResume()" class="btn btn-success btn-sm" style="{{ '' if campaign_state.paused else 'display:none' }}">
+              {{ icon('play', 'inline-icon') }} Resume
+            </button>
+            {% if session.role == 'owner' %}
+            <button onclick="campaignStop()" class="btn btn-danger btn-sm">{{ icon('stop', 'inline-icon') }} Stop</button>
+            {% endif %}
+          </div>
+        {% else %}
+          <div class="empty-state" style="padding: 32px 0;">
+            <div class="empty-icon">{{ icon('message') }}</div>
+            <p>No campaign is running right now.</p>
+            {% if session.role == 'owner' %}
+              <a href="{{ url_for('campaigns') }}" class="btn btn-primary btn-sm" style="margin-top: 14px;">Start a Campaign</a>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">{{ icon('shield', 'inline-icon') }} Safety Limits</span>
+        <span class="badge badge-gray">Fixed</span>
+      </div>
+      <div class="card-body">
+        <div style="display:flex; flex-direction:column; gap: 12px;">
+          <div class="flex justify-between items-center"><span class="text-sm text-muted">Max per campaign</span><span class="safety-chip"><strong>{{ safety.max_per_campaign }}</strong> contacts</span></div>
+          <div class="flex justify-between items-center"><span class="text-sm text-muted">Daily limit</span><span class="safety-chip"><strong>{{ safety.daily_max }}</strong> messages</span></div>
+          <div class="flex justify-between items-center"><span class="text-sm text-muted">Delay between sends</span><span class="safety-chip"><strong>{{ safety.delay }}</strong></span></div>
+          <div class="flex justify-between items-center"><span class="text-sm text-muted">Break after 20 messages</span><span class="safety-chip"><strong>2-5 min</strong></span></div>
+          <div class="flex justify-between items-center"><span class="text-sm text-muted">Message order</span><span class="safety-chip"><strong>Randomized</strong></span></div>
+        </div>
+        <div style="margin-top: 16px; padding: 12px; background: var(--success-bg); border-radius: 10px; font-size: 0.8rem; color: var(--success-dark); display:flex; align-items:center; gap:8px;">
+          {{ icon('check', 'inline-icon') }} These limits protect your WhatsApp account from being flagged.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Live Activity</span>
+        <span class="badge badge-blue">Auto-refreshing</span>
+      </div>
+      <div class="card-body" style="padding: 12px 16px;">
+        <div class="activity-log" id="activity-log">
+          {% if campaign_state.log %}
+            {% for entry in campaign_state.log %}
+              <div class="log-entry">{{ entry }}</div>
+            {% endfor %}
+          {% else %}
+            <div class="log-entry text-muted">No activity yet. Start a campaign to see live updates.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Quick Actions</span>
+      </div>
+      <div class="card-body">
+        <div style="display:flex; flex-direction: column; gap: 10px;">
+          {% if session.role == 'owner' %}
+          <a href="{{ url_for('contacts') }}" class="btn btn-outline" style="justify-content: flex-start;">{{ icon('contacts', 'inline-icon') }} View Contacts</a>
+          <a href="{{ url_for('contacts') }}" class="btn btn-outline" style="justify-content: flex-start;" onclick="setTimeout(() => document.getElementById('upload-modal-trigger')?.click(), 100)">{{ icon('upload', 'inline-icon') }} Upload CSV</a>
+          <a href="{{ url_for('campaigns') }}" class="btn btn-outline" style="justify-content: flex-start;">{{ icon('edit', 'inline-icon') }} Create Campaign</a>
+          {% endif %}
+          <a href="{{ url_for('history') }}" class="btn btn-outline" style="justify-content: flex-start;">{{ icon('history', 'inline-icon') }} View History</a>
+          {% if session.role == 'owner' %}
+          <a href="{{ url_for('export_contacts') }}" class="btn btn-outline" style="justify-content: flex-start;">{{ icon('download', 'inline-icon') }} Export Contacts CSV</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

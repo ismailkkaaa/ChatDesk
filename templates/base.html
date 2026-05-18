@@ -1,0 +1,110 @@
+{% from "_icons.html" import icon %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ChatDesk{% endblock %} - ChatDesk</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/chatdesk-logo.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-container">
+      {% for cat, msg in messages %}
+        <div class="flash {{ cat }}">
+          <span>
+            {% if cat == 'success' %}{{ icon('check', 'flash-icon') }}
+            {% elif cat == 'danger' %}{{ icon('x', 'flash-icon') }}
+            {% elif cat == 'warning' %}{{ icon('alert', 'flash-icon') }}
+            {% else %}{{ icon('info', 'flash-icon') }}{% endif %}
+          </span>
+          {{ msg }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <img src="{{ url_for('static', filename='img/chatdesk-logo.svg') }}" alt="ChatDesk logo" class="brand-icon brand-image">
+        <div>
+          <div class="brand-name">ChatDesk</div>
+          <div class="brand-tagline">Campaign Manager</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+
+      <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+        {{ icon('dashboard', 'nav-icon') }} Dashboard
+      </a>
+
+      {% if session.role == 'owner' %}
+      <a href="{{ url_for('contacts') }}" class="nav-link {% if request.endpoint in ['contacts','add_contact','upload_contacts'] %}active{% endif %}">
+        {{ icon('contacts', 'nav-icon') }} Contacts
+      </a>
+      {% endif %}
+
+      <a href="{{ url_for('campaigns') }}" class="nav-link {% if request.endpoint == 'campaigns' %}active{% endif %}">
+        {{ icon('campaigns', 'nav-icon') }} Campaigns
+      </a>
+
+      <a href="{{ url_for('history') }}" class="nav-link {% if request.endpoint == 'history' %}active{% endif %}">
+        {{ icon('history', 'nav-icon') }} History
+      </a>
+
+      <a href="{{ url_for('how_it_works') }}" class="nav-link {% if request.endpoint == 'how_it_works' %}active{% endif %}">
+        {{ icon('how', 'nav-icon') }} How It Works
+      </a>
+
+      {% if session.role == 'owner' %}
+      <div class="nav-section-label">Admin</div>
+      <a href="{{ url_for('settings') }}" class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}">
+        {{ icon('settings', 'nav-icon') }} Settings
+      </a>
+      {% endif %}
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="user-avatar">{{ session.username[0].upper() }}</div>
+        <div>
+          <div class="user-name">{{ session.username }}</div>
+          <div class="user-role">{{ session.role }}</div>
+        </div>
+      </div>
+      <a href="{{ url_for('logout') }}" class="logout-btn">{{ icon('logout', 'inline-icon') }} Sign out</a>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="content-shell">
+      {% block content %}{% endblock %}
+    </div>
+    <footer class="app-footer">
+      <div class="footer-disclaimer">Warning: ChatDesk automates WhatsApp Web actions. Frequent campaigns may cause temporary WhatsApp restrictions. Users are responsible for using ChatDesk at their own risk.</div>
+      <div class="footer-meta">
+        <span>Built by Ismail</span>
+        <a href="https://www.instagram.com/ismail_.7x" target="_blank" rel="noreferrer">Instagram</a>
+        <a href="https://github.com/ismailkkaaa" target="_blank" rel="noreferrer">GitHub</a>
+        <a href="https://www.linkedin.com/in/albasithismail7x" target="_blank" rel="noreferrer">LinkedIn</a>
+        <a href="https://wa.me/message/ZAXXTKBRHVTOI1" target="_blank" rel="noreferrer">WhatsApp</a>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
